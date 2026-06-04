@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.env
+venv/
+.venv/
+*.pkl
+*.joblib
+.coverage
+htmlcov/
+.vscode/
+.idea/
+.DS_Store
