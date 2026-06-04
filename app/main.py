@@ -1,10 +1,13 @@
 from fastapi import FastAPI
+from app.routers import predict
 
 app = FastAPI(
     title="ml-api-deploy",
-    description="Machine Learning model exposed via REST API",
+    description="API de prédiction d'attrition des employés (Projet 4)",
     version="0.1.0"
 )
+
+app.include_router(predict.router)
 
 @app.get("/")
 def root():
