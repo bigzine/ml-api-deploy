@@ -1,0 +1,33 @@
+name: CD - Deploy to HF Spaces
+
+on:
+  push:
+    branches: [main]   # déploiement uniquement sur main
+    tags:
+      - "v*"           # ou sur un tag de version
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production   # environnement protégé GitHub
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies & run tests (gate before deploy)
+        run: |
+          pip install -r requirements.txt
+          pytest tests/ -q
+
+      - name: Deploy to Hugging Face Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          pip install huggingface-hub
+          python scripts/deploy_to_hf.py
