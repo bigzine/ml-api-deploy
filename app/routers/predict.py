@@ -1,9 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
 from app.schemas import EmployeeInput, PredictionOutput
 from app.model import load_model, predict
-from app.database import get_db
-from app.models_db import Prediction
 import pandas as pd
 import os
 
@@ -55,12 +52,16 @@ FEATURE_ORDER = [
 ]
 
 
+def get_db_dependency():
+    try:
+        from app.database import get_db
+        return get_db
+    except Exception:
+        return None
+
+
 @router.post("/", response_model=PredictionOutput, summary="Prédire l'attrition d'un employé")
-def predict_attrition(employee: EmployeeInput, db: Session = Depends(get_db)):
-    """
-    Prédit si un employé va quitter l'entreprise.
-    Les inputs et outputs sont enregistrés en base de données.
-    """
+def predict_attrition(employee: EmployeeInput, db=Depends(get_db_dependency())):
     if model is None:
         raise HTTPException(status_code=503, detail="Modèle non disponible")
 
@@ -71,22 +72,25 @@ def predict_attrition(employee: EmployeeInput, db: Session = Depends(get_db)):
 
     result = predict(model, input_df)
 
-    # Enregistrement en base de données
-    prediction_record = Prediction(
-        input_data=data,
-        prediction=int(result["prediction"]),
-        label="Quitte l'entreprise" if result["prediction"] == 1 else "Reste dans l'entreprise",
-        probabilite_depart=round(float(result["proba"]), 4),
-        satisfaction_globale=round(float(input_df['satisfaction_globale'].iloc[0]), 4),
-        indicateur_surcharge=int(input_df['indicateur_surcharge'].iloc[0]),
-        model_version="0.1.0"
-    )
-    db.add(prediction_record)
-    db.commit()
-    db.refresh(prediction_record)
+    if db is not None:
+        try:
+            from app.models_db import Prediction
+            prediction_record = Prediction(
+                input_data=data,
+                prediction=int(result["prediction"]),
+                label="Quitte l'entreprise" if result["prediction"] == 1 else "Reste dans l'entreprise",
+                probabilite_depart=round(float(result["proba"]), 4),
+                satisfaction_globale=round(float(input_df['satisfaction_globale'].iloc[0]), 4),
+                indicateur_surcharge=int(input_df['indicateur_surcharge'].iloc[0]),
+                model_version="0.1.0"
+            )
+            db.add(prediction_record)
+            db.commit()
+        except Exception as e:
+            print(f"DB non disponible : {e}")
 
     return PredictionOutput(
-        prediction=prediction_record.prediction,
-        label=prediction_record.label,
-        probabilite_depart=prediction_record.probabilite_depart
+        prediction=int(result["prediction"]),
+        label="Quitte l'entreprise" if result["prediction"] == 1 else "Reste dans l'entreprise",
+        probabilite_depart=round(float(result["proba"]), 4)
     )
