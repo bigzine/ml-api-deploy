@@ -3,6 +3,7 @@ Tests unitaires - Endpoints principaux
 """
 from fastapi.testclient import TestClient
 from app.main import app
+import app.routers.predict as predict_module
 
 client = TestClient(app)
 
@@ -60,7 +61,6 @@ def test_health():
 
 def test_predict_no_model():
     """Sans modèle chargé, l'API doit retourner 503"""
-    import app.routers.predict as predict_module
     original_model = predict_module.model
     predict_module.model = None
 
