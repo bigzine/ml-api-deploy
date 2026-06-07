@@ -9,11 +9,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copier le code source
 COPY app/ ./app/
 
+# Copier le modèle
 COPY models/model.pkl ./models/model.pkl
-
-ENV MODEL_PATH=models/model.pkl
 
 EXPOSE 7860
 
