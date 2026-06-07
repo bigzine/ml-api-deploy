@@ -9,6 +9,8 @@ def mock_dependencies():
     fake_model.predict.return_value = np.array([0])
     fake_model.predict_proba.return_value = np.array([[0.68, 0.32]])
 
+    fake_db = MagicMock()
+
     with patch("app.routers.predict.save_to_db", return_value=None), \
          patch("app.routers.predict.model", fake_model):
         yield fake_model

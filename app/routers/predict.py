@@ -91,6 +91,7 @@ def predict_attrition(employee: EmployeeInput):
 
     result = predict(model, input_df)
 
+    # Enregistrement en DB (optionnel)
     save_to_db(data, result, input_df)
 
     return PredictionOutput(
