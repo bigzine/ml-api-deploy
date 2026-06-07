@@ -7,7 +7,6 @@ from app.main import app
 
 client = TestClient(app)
 
-# ── Payload valide de référence ─────────────────────────────────
 VALID_PAYLOAD = {
     "age": 35,
     "revenu_mensuel": 5000,
@@ -47,15 +46,15 @@ VALID_PAYLOAD = {
 }
 
 
-# ── Tests réponse valide ────────────────────────────────────────
+# ── Tests réponse valide ─────────────────────────────────────────
 def test_predict_valid_payload():
-    """Un payload valide doit retourner 200"""
+    """Un payload valide doit retourner 200."""
     response = client.post("/predict/", json=VALID_PAYLOAD)
     assert response.status_code == 200
 
 
 def test_predict_response_structure():
-    """La réponse doit contenir prediction, label, probabilite_depart"""
+    """La réponse doit contenir prediction, label, probabilite_depart."""
     response = client.post("/predict/", json=VALID_PAYLOAD)
     data = response.json()
     assert "prediction" in data
@@ -64,20 +63,20 @@ def test_predict_response_structure():
 
 
 def test_predict_prediction_is_binary():
-    """prediction doit être 0 ou 1"""
+    """prediction doit être 0 ou 1."""
     response = client.post("/predict/", json=VALID_PAYLOAD)
     assert response.json()["prediction"] in [0, 1]
 
 
 def test_predict_probability_range():
-    """probabilite_depart doit être entre 0 et 1"""
+    """probabilite_depart doit être entre 0 et 1."""
     response = client.post("/predict/", json=VALID_PAYLOAD)
     proba = response.json()["probabilite_depart"]
     assert 0.0 <= proba <= 1.0
 
 
 def test_predict_label_coherence():
-    """Le label doit correspondre à la prediction"""
+    """Le label doit correspondre à la prediction."""
     response = client.post("/predict/", json=VALID_PAYLOAD)
     data = response.json()
     if data["prediction"] == 1:
@@ -86,9 +85,8 @@ def test_predict_label_coherence():
         assert data["label"] == "Reste dans l'entreprise"
 
 
-# ── Tests profil à risque élevé ─────────────────────────────────
 def test_predict_high_risk_profile():
-    """Un profil à risque élevé doit avoir une probabilité > 0.5"""
+    """Un profil à risque élevé doit retourner 200."""
     high_risk = VALID_PAYLOAD.copy()
     high_risk.update({
         "heure_supplementaires": 1,
@@ -103,9 +101,9 @@ def test_predict_high_risk_profile():
     assert response.status_code == 200
 
 
-# ── Tests validation Pydantic ───────────────────────────────────
+# ── Tests validation Pydantic ────────────────────────────────────
 def test_predict_missing_field():
-    """Un champ manquant doit retourner 422"""
+    """Un champ manquant doit retourner 422."""
     payload = VALID_PAYLOAD.copy()
     del payload["age"]
     response = client.post("/predict/", json=payload)
@@ -113,7 +111,7 @@ def test_predict_missing_field():
 
 
 def test_predict_invalid_satisfaction_range():
-    """satisfaction hors [1-4] doit retourner 422"""
+    """satisfaction hors [1-4] doit retourner 422."""
     payload = VALID_PAYLOAD.copy()
     payload["satisfaction_employee_environnement"] = 99
     response = client.post("/predict/", json=payload)
@@ -121,7 +119,7 @@ def test_predict_invalid_satisfaction_range():
 
 
 def test_predict_invalid_heure_sup():
-    """heure_supplementaires hors [0-1] doit retourner 422"""
+    """heure_supplementaires hors [0-1] doit retourner 422."""
     payload = VALID_PAYLOAD.copy()
     payload["heure_supplementaires"] = 5
     response = client.post("/predict/", json=payload)
@@ -129,14 +127,30 @@ def test_predict_invalid_heure_sup():
 
 
 def test_predict_empty_payload():
-    """Un payload vide doit retourner 422"""
+    """Un payload vide doit retourner 422."""
     response = client.post("/predict/", json={})
     assert response.status_code == 422
 
 
 def test_predict_wrong_type():
-    """Un type incorrect doit retourner 422"""
+    """Un type incorrect doit retourner 422."""
     payload = VALID_PAYLOAD.copy()
     payload["age"] = "trente-cinq"
+    response = client.post("/predict/", json=payload)
+    assert response.status_code == 422
+
+
+def test_predict_invalid_niveau_education():
+    """niveau_education hors [1-5] doit retourner 422."""
+    payload = VALID_PAYLOAD.copy()
+    payload["niveau_education"] = 10
+    response = client.post("/predict/", json=payload)
+    assert response.status_code == 422
+
+
+def test_predict_invalid_frequence_deplacement():
+    """frequence_deplacement hors [0-2] doit retourner 422."""
+    payload = VALID_PAYLOAD.copy()
+    payload["frequence_deplacement"] = 5
     response = client.post("/predict/", json=payload)
     assert response.status_code == 422

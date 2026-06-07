@@ -1,4 +1,5 @@
 FROM python:3.11-slim
+
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -9,7 +10,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ ./app/
-COPY models/ ./models/
+
+COPY models/model.pkl ./models/model.pkl
+
+ENV MODEL_PATH=models/model.pkl
 
 EXPOSE 7860
 
