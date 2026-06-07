@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from app.schemas import EmployeeInput, PredictionOutput
 from app.model import load_model, predict
 import pandas as pd
@@ -52,16 +52,35 @@ FEATURE_ORDER = [
 ]
 
 
-def get_db_dependency():
+def save_to_db(data: dict, result: dict, input_df: pd.DataFrame):
+    """Enregistre la prédiction en DB si disponible."""
     try:
-        from app.database import get_db
-        return get_db
-    except Exception:
-        return None
+        from app.database import SessionLocal
+        from app.models_db import Prediction
+
+        db = SessionLocal()
+        prediction_record = Prediction(
+            input_data=data,
+            prediction=int(result["prediction"]),
+            label="Quitte l'entreprise" if result["prediction"] == 1 else "Reste dans l'entreprise",
+            probabilite_depart=round(float(result["proba"]), 4),
+            satisfaction_globale=round(float(input_df['satisfaction_globale'].iloc[0]), 4),
+            indicateur_surcharge=int(input_df['indicateur_surcharge'].iloc[0]),
+            model_version="0.1.0"
+        )
+        db.add(prediction_record)
+        db.commit()
+        db.close()
+    except Exception as e:
+        print(f"DB non disponible : {e}")
 
 
 @router.post("/", response_model=PredictionOutput, summary="Prédire l'attrition d'un employé")
-def predict_attrition(employee: EmployeeInput, db=Depends(get_db_dependency())):
+def predict_attrition(employee: EmployeeInput):
+    """
+    Prédit si un employé va quitter l'entreprise.
+    Les inputs et outputs sont enregistrés en base de données si disponible.
+    """
     if model is None:
         raise HTTPException(status_code=503, detail="Modèle non disponible")
 
@@ -72,22 +91,7 @@ def predict_attrition(employee: EmployeeInput, db=Depends(get_db_dependency())):
 
     result = predict(model, input_df)
 
-    if db is not None:
-        try:
-            from app.models_db import Prediction
-            prediction_record = Prediction(
-                input_data=data,
-                prediction=int(result["prediction"]),
-                label="Quitte l'entreprise" if result["prediction"] == 1 else "Reste dans l'entreprise",
-                probabilite_depart=round(float(result["proba"]), 4),
-                satisfaction_globale=round(float(input_df['satisfaction_globale'].iloc[0]), 4),
-                indicateur_surcharge=int(input_df['indicateur_surcharge'].iloc[0]),
-                model_version="0.1.0"
-            )
-            db.add(prediction_record)
-            db.commit()
-        except Exception as e:
-            print(f"DB non disponible : {e}")
+    save_to_db(data, result, input_df)
 
     return PredictionOutput(
         prediction=int(result["prediction"]),
