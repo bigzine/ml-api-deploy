@@ -32,3 +32,4 @@ jobs:
         run: |
           pip install huggingface-hub
           python scripts/deploy_to_hf.py
+        working-directory: ${{ github.workspace }}
