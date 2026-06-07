@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from huggingface_hub import HfApi
 
-HF_TOKEN   = os.environ["HF_TOKEN"]
+HF_TOKEN = os.environ["HF_TOKEN"]
 HF_REPO_ID = os.environ["HF_SPACE_ID"]
 
 ROOT = Path(__file__).parent.parent
@@ -24,7 +24,14 @@ api = HfApi(token=HF_TOKEN)
 for local_path, repo_path in FILES_TO_UPLOAD:
     full_path = ROOT / local_path
     if not full_path.exists():
-        print(f"⚠️ Fichier manquant : {full_path}")
+        print(f"Fichier manquant : {full_path}")
         continue
     api.upload_file(
-        p
+        path_or_fileobj=str(full_path),
+        path_in_repo=repo_path,
+        repo_id=HF_REPO_ID,
+        repo_type="space",
+    )
+    print(f"Uploaded: {local_path}")
+
+print(f"Deploye sur https://huggingface.co/spaces/{HF_REPO_ID}")
