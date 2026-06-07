@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from app.routers import predict
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="ml-api-deploy",
