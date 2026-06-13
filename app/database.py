@@ -1,10 +1,13 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from dotenv import load_dotenv
 import os
+
+load_dotenv(encoding='utf-8')
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:password@localhost:5432/ml_api_db"
+    "postgresql://postgres:addadem@localhost:5432/ml_api_db"
 )
 
 engine = create_engine(DATABASE_URL)

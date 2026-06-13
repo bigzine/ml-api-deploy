@@ -55,6 +55,9 @@ FEATURE_ORDER = [
 def save_to_db(data: dict, result: dict, input_df: pd.DataFrame):
     """Enregistre la prédiction en DB si disponible."""
     try:
+        from dotenv import load_dotenv
+        load_dotenv(encoding='utf-8')
+
         from app.database import SessionLocal
         from app.models_db import Prediction
 
